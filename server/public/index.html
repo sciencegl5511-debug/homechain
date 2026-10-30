@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HomeChain</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">⌂</span> HomeChain <span class="tag">demo · local chain</span></div>
+    <nav class="tabs">
+      <button data-view="market" class="active">Marketplace</button>
+      <button data-view="portfolio">Portfolio</button>
+      <button data-view="admin">Operations</button>
+    </nav>
+    <div class="account">
+      <select id="userSelect" aria-label="Acting as"></select>
+      <div class="acct-meta">
+        <span id="kycBadge" class="badge"></span>
+        <span id="cash" class="cash"></span>
+        <button id="faucetBtn" class="ghost small" title="Mint 10,000 test USDC">+ USDC</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="view-market" class="view">
+      <div id="propertyGrid" class="grid"></div>
+      <div id="propertyDetail" class="detail hidden"></div>
+    </section>
+    <section id="view-portfolio" class="view hidden"></section>
+    <section id="view-admin" class="view hidden"></section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="app.js"></script>
+</body>
+</html>
