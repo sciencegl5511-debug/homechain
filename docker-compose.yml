@@ -1,0 +1,17 @@
+# Optional: a local MySQL for the demo server. SQLite is used when DATABASE_URL is not set.
+#   docker compose up -d
+#   DATABASE_URL=mysql://homechain:homechain@127.0.0.1:3306/homechain npm run app
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: homechain
+      MYSQL_USER: homechain
+      MYSQL_PASSWORD: homechain
+      MYSQL_ROOT_PASSWORD: homechain-root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+volumes:
+  mysql-data:

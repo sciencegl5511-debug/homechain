@@ -226,8 +226,10 @@ quorum and a supermajority.
 | **Fiat ramps** | ACH/wire to USDC through a regulated on-ramp, and back again for withdrawals. |
 | **Surveillance / reporting** | Wash-trade and spoofing detection, large-trader reports, the ATS's Form ATS-N obligations, and the transfer agent's register of members. |
 
-The demo `server/` folder implements a small slice of this: a read API that queries chain state and
-events directly, and write endpoints that sign as demo users.
+The demo `server/` folder implements a small slice of this. Investor/KYC records, property details
+and an activity log are stored in a database (SQLite by default, MySQL via `DATABASE_URL`). An indexer
+copies chain events into `orders`, `trades`, `distributions` and `valuations` tables. Balances and the
+live order book are still read from the chain. Write endpoints sign as demo users.
 
 ---
 
@@ -274,6 +276,7 @@ holdings(token, wallet, balance, locked, cost_basis, rent_received)   -- derived
 | Signing | Server signs with Hardhat's unlocked accounts | User wallet / MPC; server never holds keys |
 | Stablecoin | `MockUSDC` with an open faucet | Native USDC on the L2 |
 | KYC | Button in "Operations" | Provider webhook → KYC service → `register` |
-| Read path | Direct RPC and event queries | Indexer and Postgres |
+| Read path | Polling indexer into SQLite/MySQL, plus live RPC for balances | Indexer with reorg handling (confirmations, block-hash checks) into Postgres/MySQL |
+| Off-chain records | `investors`, `properties`, `activity_log` tables | Same, plus encrypted PII store and document vault |
 | Admin | Single EOA | Multisig + timelock per role |
 | Property data | Hard-coded in the deploy script | Origination service and IPFS document bundle |

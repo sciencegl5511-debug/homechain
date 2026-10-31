@@ -3,3 +3,4 @@ artifacts/
 cache/
 deployments/hardhat.json
 deployments/localhost.json
+data/

@@ -24,7 +24,15 @@ contracts/
   mocks/MockUSDC.sol
 test/platform.test.js    24 tests: offering, compliance, distributions, recovery, matching, fees, stale orders
 scripts/deploy.js        deploys to a local node and seeds 3 properties, KYC'd users, orders, trades, rent
-server/                  demo API (Express + ethers) and web app (vanilla JS)
+server/
+  index.js               demo API (Express + ethers)
+  db.js                  database connection: SQLite by default, MySQL via DATABASE_URL
+  migrations/            schema (Knex migrations, same for both databases)
+  indexer.js             copies chain events (orders, trades, rent, valuations) into the database
+  store.js               investor/KYC records and property details
+  public/                web app (vanilla JS)
+test/indexer.test.js     indexer tests (SQLite by default, MySQL with TEST_DATABASE_URL)
+docker-compose.yml       optional local MySQL
 ```
 
 ## Run it
@@ -63,6 +71,34 @@ Open http://localhost:3000. Use the account switcher to act as different users:
 - **Issuer:** distributes rent (Operations).
 - **Platform Admin:** publishes valuations and registers KYC. To close the Harbor offering, use
   "Advance chain time" and then "Finalize".
+
+## Storage
+
+The app keeps its data in a database. By default that's a SQLite file at
+`data/homechain.sqlite`, created automatically on first start with nothing to install. To use MySQL
+instead, set `DATABASE_URL`:
+
+```bash
+docker compose up -d
+```
+
+```bash
+DATABASE_URL=mysql://homechain:homechain@127.0.0.1:3306/homechain npm run app
+```
+
+What lives where:
+
+| Data | Where | Notes |
+|---|---|---|
+| Token balances, locks, claimable rent, live order book | Chain | Always read live; the chain is the source of truth |
+| Investor profiles and KYC decisions | `investors` table | System of record. On startup, anyone verified here but not on-chain is re-registered |
+| Property details (beds, rent, sqft, ...) | `properties` table | Seeded from the deploy script on first run, then edited in the DB |
+| Orders, trades, distributions, valuations | `orders`, `trades`, `distributions`, `valuations` | Indexed from chain events. Rebuilt automatically when the chain is reset or redeployed |
+| Every action taken through the API | `activity_log` | Shown under Operations → Activity log |
+
+`npx hardhat node` keeps its chain in memory, so restarting it wipes balances and trades. The
+database survives: after you restart the node and run `npm run deploy` again, KYC approvals and the
+activity log are still there, and the indexed tables are rebuilt from the new chain.
 
 ## Key design points
 

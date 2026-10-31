@@ -302,6 +302,15 @@ function renderPortfolio() {
             <td class="r"><button class="ghost small" data-cancel="${o.id}">Cancel</button></td></tr>`).join("")}
         </tbody></table>` : `<div class="empty">No open orders.</div>`}
       </div>
+      <div class="panel">
+        <h3>Trade history</h3>
+        ${p.trades.length ? `<table><thead><tr><th>Date</th><th>Property</th><th>Side</th><th class="r">Price</th><th class="r">Qty</th><th class="r">Fee</th><th>Counterparty</th></tr></thead><tbody>
+          ${p.trades.map((t) => `<tr><td>${date(t.time)}</td><td>${esc(t.symbol)}</td>
+            <td style="color:var(--${t.side});font-weight:600">${t.side.toUpperCase()}</td>
+            <td class="r">${usd(t.price)}</td><td class="r">${int(t.amount)}</td><td class="r">${usd(t.fee)}</td>
+            <td class="muted">${esc(t.counterparty)}</td></tr>`).join("")}
+        </tbody></table>` : `<div class="empty">No trades yet.</div>`}
+      </div>
     </div>`;
   el.querySelectorAll("[data-claim]").forEach((b) => b.onclick = () => action(() => api(`/api/tokens/${b.dataset.claim}/claim-rent`, { user: state.user }), "Rent claimed"));
   el.querySelectorAll("[data-claim-off]").forEach((b) => b.onclick = () => action(() => api(`/api/offerings/${b.dataset.claimOff}/claim`, { user: state.user }), "Done"));
@@ -345,12 +354,35 @@ function renderAdmin() {
         <div class="notice">In production this is triggered by the KYC provider's webhook after document + liveness checks; only a hash of the case ID goes on-chain.</div>
         <button class="primary" id="kycBtn">Register identity</button>
       </div>
+    </div>
+    <div class="stack" style="margin-top:16px">
+      <div class="panel" id="dbPanel"><h3>Database</h3><div class="empty">Loading…</div></div>
+      <div class="panel" id="activityPanel"><h3>Activity log</h3><div class="empty">Loading…</div></div>
     </div>`;
+  loadAdminData();
   $("#distBtn").onclick = () => action(() => api(`/api/tokens/${$("#distProp").value}/distribute`, { user: state.user, amount: $("#distAmt").value, memo: $("#distMemo").value }), "Distribution sent");
   $("#navBtn").onclick = () => action(() => api(`/api/tokens/${$("#navProp").value}/valuation`, { user: state.user, navPerToken: $("#navAmt").value, reportURI: $("#navUri").value }), "Valuation updated");
   $("#warpBtn").onclick = () => action(() => api("/api/dev/advance-time", { seconds: 31 * 86400 }), "Advanced 31 days");
   $("#finBtn").onclick = () => action(() => api(`/api/offerings/${$("#finProp").selectedOptions[0].dataset.offering}/finalize`, { user: state.user }), "Offering finalized");
   $("#kycBtn").onclick = () => action(() => api("/api/kyc", { address: $("#kycUser").value, accredited: $("#kycAcc").checked }), "Identity registered");
+}
+
+async function loadAdminData() {
+  const [status, activity] = await Promise.all([api("/api/status"), api("/api/activity?limit=25")]);
+  if (state.view !== "admin") return;
+  const lag = status.chainBlock - status.indexedBlock;
+  $("#dbPanel").innerHTML = `<h3>Database</h3>
+    <div class="facts">
+      <div><span>Backend</span>${esc(status.database)}</div>
+      <div><span>Indexed block</span>${int(status.indexedBlock)} of ${int(status.chainBlock)}${lag > 0 ? ` <span class="muted">(${lag} behind)</span>` : " ✓"}</div>
+      ${Object.entries(status.counts).map(([t, n]) => `<div><span>${esc(t)}</span>${int(n)} rows</div>`).join("")}
+    </div>`;
+  $("#activityPanel").innerHTML = `<h3>Activity log</h3>
+    ${activity.length ? `<table><thead><tr><th>Time</th><th>Who</th><th>Action</th><th>Details</th><th>Result</th></tr></thead><tbody>
+      ${activity.map((a) => `<tr><td>${new Date(a.at).toLocaleString()}</td><td>${esc(a.actor ?? "—")}</td><td>${esc(a.action)}</td>
+        <td class="muted">${esc(Object.entries(a.params).map(([k, v]) => `${k}=${typeof v === "string" && v.startsWith("0x") ? v.slice(0, 8) + "…" : v}`).join(" "))}</td>
+        <td style="color:var(--${a.status === "ok" ? "buy" : "sell"})">${a.status === "ok" ? "ok" : esc(a.error)}</td></tr>`).join("")}
+    </tbody></table>` : `<div class="empty">No activity yet. Actions taken through this app are recorded here.</div>`}`;
 }
 
 // ------------------------------------------------------------------ boot

@@ -12,8 +12,11 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "better-sqlite3": "^11.7.0",
     "ethers": "^6.13.4",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "knex": "^3.1.0",
+    "mysql2": "^3.11.5"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
